@@ -1,5 +1,105 @@
 # iOSCleanNetwork
 
+## For AI agents
+
+If you are an AI agent generating code from this repository, read [`README_AI.md`](./README_AI.md) before writing any files.
+
+`README_AI.md` defines the required naming conventions, folder structure, testing approach, spy conventions, and output format expected for projects built on top of this framework.
+
+In particular, it explains that:
+
+- endpoint configuration must use `*Setup`
+- request executors must use `*Provider`
+- tests must reuse the same production `Provider`
+- JSON-backed testing should use `MockedURLSession`
+- concrete spies and service-level spy aggregators are handwritten by the consumer
+- the final generated result must preserve the host project structure and be deliverable as a zip file
+
+
+`iOSCleanNetwork` can be used in two different ways:
+
+1. **AI-assisted generation**
+2. **Manual implementation**
+
+For most consumers, the intended workflow is to use **AI first**.
+
+Give an AI agent:
+
+- the URL of this repository
+- the endpoint documentation URL, OpenAPI spec, or endpoint description
+- one or more sample JSON responses, if available
+
+The repository includes a dedicated [`README_AI.md`](./README_AI.md) file for AI agents. That file explains how code must be generated when building on top of this framework.
+
+The goal is that an AI agent can inspect this repository, find `README_AI.md`, and generate all the human-written integration files needed to consume a service with `iOSCleanNetwork`.
+
+## AI-first use case
+
+If you want to accelerate implementation, the preferred flow is:
+
+1. Give the AI this repository URL
+2. Give the AI the endpoint documentation and, if possible, the expected JSON responses
+3. Let the AI generate the integration code following this framework's conventions
+4. Review the generated output with this README if you want to understand how it was structured
+
+This human README is therefore useful for **two things**:
+
+- understanding how the framework works if you want to code by hand
+- understanding what an AI agent generated if the code was produced automatically
+
+## What the AI is expected to generate
+
+When an AI agent follows [`README_AI.md`](./README_AI.md), it should generate the files that a human would normally write to integrate a service with this framework.
+
+That usually includes:
+
+- one or more `*Setup` types conforming to `ApiSetupProtocol`
+- one or more `*Provider` types that perform the request and decode the response
+- request payload models using the `*DTO` naming
+- transport response models using the `*Response` naming
+- JSON fixtures for testing
+- tests using the same production `Provider`
+- concrete provider spies written by hand on top of `ProviderSpyProtocol`
+- optional service-level spy aggregators written by hand by the consumer
+- the expected folder structure matching the host project layout
+
+The generated output should be ready to drop into a real project and should follow the same conventions documented below in this README.
+
+## How to use what the AI generated
+
+After the AI generates the integration code, you typically:
+
+1. add the generated Swift and JSON files to your host project
+2. verify that the folders match your project structure
+3. review the generated `Setup`, `Provider`, DTOs, responses, fixtures, and tests
+4. run the tests
+5. wire the generated `Provider` into your app or SDK
+
+You can use the rest of this README to understand:
+
+- why the generated files were named that way
+- what each generated file is responsible for
+- how runtime and testing are expected to work
+
+## If you want to build it by hand
+
+If you do not want to use AI generation, the rest of this README explains the conventions, structure, and testing approach required to build the integration manually.
+
+## For AI agents
+
+If you are an AI agent generating code from this repository, read [`README_AI.md`](./README_AI.md) before writing any files.
+
+`README_AI.md` defines the required naming conventions, folder structure, testing approach, spy conventions, and output format expected for projects built on top of this framework.
+
+In particular, it explains that:
+
+- endpoint configuration must use `*Setup`
+- request executors must use `*Provider`
+- tests must reuse the same production `Provider`
+- JSON-backed testing should use `MockedURLSession`
+- concrete spies and service-level spy aggregators are handwritten by the consumer
+- the final generated result must preserve the host project structure and be deliverable as a zip file
+
 `iOSCleanNetwork` is a lightweight Swift Package for building API clients with a clear and predictable structure.
 
 The package is based on two simple conventions:
