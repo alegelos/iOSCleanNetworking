@@ -2,7 +2,7 @@
 
 ## AI-first use case
 
-This repository is meant to be used in an **AI-first** workflow.
+This repository is designed to support an AI-first workflow.
 
 If you want an AI agent to generate integration code on top of this framework, give the agent:
 
@@ -12,7 +12,7 @@ If you want an AI agent to generate integration code on top of this framework, g
 
 Before generating anything, the AI must read [`README_AI.md`](./README_AI.md).
 
-`README_AI.md` defines the required output format, folder structure, naming rules, and testing expectations for generated code.
+`README_AI.md` defines the required output format, folder structure, naming rules, mapping rules, and testing expectations for generated code.
 
 ## What the AI should generate
 
@@ -24,7 +24,7 @@ The AI should generate the integration files that a developer would normally cre
 - `*Provider` types
 - DTOs
 - response models
-- domain mapper extensions
+- response-to-domain mapper extensions
 - JSON fixtures
 - tests
 
@@ -47,7 +47,7 @@ This README is also valid if you want to create the same structure manually inst
 
 ## Required generated structure
 
-The generated output must start with a **root folder named after the project**, feature, or something very similar.
+The generated output must start with a **root folder named after the project, feature, or something very similar**.
 
 Example:
 
@@ -69,8 +69,12 @@ Domain/
 
 Rules:
 
-- `Domain/Providers/` contains only the **protocols of the features**
-- `Domain/Models/` contains only the **domain model structs**
+- `Domain/Providers/` contains only **feature protocols**
+- every protocol in `Domain/Providers/` must end with `Protocol`
+- protocol names must be based on the **feature or capability**, not on the raw API vendor or transport name
+- those protocols define the methods exposed by the Data-layer provider
+- those protocol methods must return **Domain models**, never transport responses
+- `Domain/Models/` contains only **domain model structs**
 - no DTOs in `Domain`
 - no response models in `Domain`
 - no concrete API implementation in `Domain`
@@ -110,17 +114,18 @@ Data/
 Inside each service folder, the structure must be:
 
 ```text
-<ServiceName>/
-├─ <ServiceName>Setup/
-├─ <ServiceName>Provider/
+/
+├─ Setup/
+├─ Provider/
 ├─ Responses/    // only if there are response models
 └─ DTOs/         // only if there are DTOs
 ```
 
 Rules:
 
-- `<ServiceName>Setup/` contains the `*Setup` file for that service
-- `<ServiceName>Provider/` contains the `*Provider` file for that service
+- `Setup/` contains the `*Setup` file for that service
+- `Provider/` contains the `*Provider` file for that service
+- the concrete `*Provider` in Data must conform to the corresponding Domain protocol
 - `Responses/` must exist only if the service has response structs
 - `DTOs/` must exist only if the service has DTO structs
 - if there is no response, do not create `Responses/`
@@ -140,18 +145,18 @@ CheckoutFlow/
 └─ Data/
    └─ APIs/
       ├─ TokensAPI/
-      │  ├─ TokensAPISetup/
+      │  ├─ Setup/
       │  │  └─ TokensAPISetup.swift
-      │  ├─ TokensAPIProvider/
+      │  ├─ Provider/
       │  │  └─ TokensAPIProvider.swift
       │  ├─ Responses/
       │  │  └─ CardTokenResponse.swift
       │  └─ DTOs/
       │     └─ CreateCardTokenDTO.swift
       └─ PaymentsAPI/
-         ├─ PaymentsAPISetup/
+         ├─ Setup/
          │  └─ PaymentsAPISetup.swift
-         ├─ PaymentsAPIProvider/
+         ├─ Provider/
          │  └─ PaymentsAPIProvider.swift
          ├─ Responses/
          │  └─ CreatePaymentResponse.swift
@@ -190,8 +195,9 @@ A `Provider` is responsible for:
 - building the correct `Setup`
 - performing the request
 - decoding the response
-- mapping transport models into domain models
-- returning domain models
+- mapping transport models into Domain models
+- returning Domain models
+- conforming to the feature protocol declared in `Domain/Providers/`
 
 Examples:
 
@@ -201,15 +207,21 @@ Examples:
 
 ### Domain provider protocols
 
-Protocols in `Domain/Providers/` should describe the feature capability.
+Protocols in `Domain/Providers/` must describe the feature capability.
+
+Rules:
+
+- the name must end with `Protocol`
+- the name should represent the feature, not the transport vendor
+- the protocol lives in `Domain`
+- the concrete implementation lives in `Data`
+- the protocol methods must return Domain models
 
 Examples:
 
 - `CardTokenProviderProtocol`
 - `PaymentsProviderProtocol`
 - `ProfileProviderProtocol`
-
-These are protocols only. Concrete implementations stay in `Data`.
 
 ### DTOs and responses
 
@@ -225,9 +237,9 @@ Examples:
 - `CardTokenResponse`
 - `CreatePaymentResponse`
 
-### Domain mapper extension
+## Domain mapper extension
 
-When a response model maps into a domain model, the mapper should live in the `Data` layer and use a computed property named `domain`.
+When a response model maps into a Domain model, the mapper must live in the `Data` layer and use a computed property named `domain`.
 
 Example:
 
@@ -239,13 +251,21 @@ extension CardTokenResponse {
 }
 ```
 
+Rules:
+
+- the mapper must live in `Data`, next to the related response model
+- the computed property must be named `domain`
+- the return type must be the matching Domain model
+- the concrete Provider must call `.domain` before returning
+- if the endpoint returns arrays, the Provider must map them into Domain arrays before returning
+
 ## Testing expectations
 
 Generated tests should:
 
 - use `MockedURLSession` when JSON-backed transport testing is needed
 - test the concrete `Provider`
-- verify request setup, decoding, and mapping
+- verify request setup, decoding, and Domain mapping
 - keep JSON fixtures close to the related feature when possible
 
 Concrete spies are optional and should be added only when they improve clarity or simplify assertions.
