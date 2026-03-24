@@ -1,19 +1,21 @@
 import Foundation
 import iOSCleanNetwork
 
-/// Use to mock URLSession calls
+/// Mock implementation of `NetworkSessionProtocol` that loads response data
+/// from a local JSON file instead of performing a real network call.
 public final class MockedURLSession: NetworkSessionProtocol {
 
-    public let jsonReader = JSonReader()
+    public init() {}
 
     public func data(for apiRequestSetup: ApiSetupProtocol) async throws -> (Data, URLResponse) {
-        guard let apiRequestSetup = apiRequestSetup as? URLSessionSetupProtocol else {
-            throw Errors.missingJsonFileName
+        guard let urlSessionSetup = apiRequestSetup as? URLSessionSetupProtocol else {
+            throw Errors.invalidMockedRequestSetup
         }
 
-        let jsonFileName = apiRequestSetup.jsonFileName
-
-        let jsonData = try jsonReader.localJSon(jsonFileName)
+        let jsonData = try JSONReader.localJSON(
+            urlSessionSetup.jsonFileName,
+            in: urlSessionSetup.jsonBundle
+        )
 
         return (jsonData, HTTPURLResponse())
     }
@@ -28,13 +30,12 @@ public final class MockedURLSession: NetworkSessionProtocol {
 
             return try await data(for: endpoint)
         } catch ApiErrors.unauthorized {
-            let apiAccessToken = try await apiAccessProvider.apisAccessToken(policy: .forceRefresh)
-            let endpoint = buildEndpoint(apiAccessToken)
+            let refreshedApiAccessToken = try await apiAccessProvider.apisAccessToken(policy: .forceRefresh)
+            let endpoint = buildEndpoint(refreshedApiAccessToken)
 
             return try await data(for: endpoint)
         }
     }
-
 }
 
 // MARK: - Helping Structure
@@ -42,7 +43,6 @@ public final class MockedURLSession: NetworkSessionProtocol {
 public extension MockedURLSession {
 
     enum Errors: Error {
-        case missingJsonFileName
+        case invalidMockedRequestSetup
     }
-
 }
